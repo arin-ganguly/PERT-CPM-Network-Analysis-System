@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+
+{% block title %}Upload | PERT/CPM Scheduler{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-3">
+            <div>
+                <h1 class="h2 fw-bold mb-1">Project Input</h1>
+                <p class="text-secondary mb-0">Upload an Excel workbook or enter the task network manually.</p>
+            </div>
+        </div>
+    </div>
+
+    {% if error %}
+    <div class="col-12">
+        <div class="alert alert-danger shadow-sm" role="alert">
+            {{ error }}
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body p-4">
+                <h2 class="h4 fw-bold mb-3">Excel Upload</h2>
+                <p class="text-secondary small">
+                    Required columns: <strong>Task</strong>, <strong>Duration</strong>, <strong>Depends_On</strong>.
+                    Optional PERT columns: <strong>O</strong>, <strong>M</strong>, <strong>P</strong>.
+                </p>
+                <form action="{{ url_for('main.process') }}" method="post" enctype="multipart/form-data">
+                    <input type="hidden" name="source" value="excel">
+                    <div class="mb-3">
+                        <label for="excel_file" class="form-label fw-semibold">Excel File (.xlsx)</label>
+                        <input class="form-control" type="file" id="excel_file" name="excel_file" accept=".xlsx" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Upload and Process</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-8" id="manual-entry">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                    <div>
+                        <h2 class="h4 fw-bold mb-1">Manual Task Entry</h2>
+                        <p class="text-secondary small mb-0">
+                            Leave <strong>Duration</strong> blank if you want to calculate it from PERT values.
+                        </p>
+                    </div>
+                    <button type="button" class="btn btn-outline-primary btn-sm" id="add-row-btn">Add Row</button>
+                </div>
+
+                <form action="{{ url_for('main.process') }}" method="post">
+                    <input type="hidden" name="source" value="manual">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle" id="manual-task-table">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Task</th>
+                                    <th>Duration</th>
+                                    <th>Depends_On</th>
+                                    <th>O</th>
+                                    <th>M</th>
+                                    <th>P</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for row in manual_rows %}
+                                <tr>
+                                    <td><input type="text" class="form-control" name="task" value="{{ row.task }}"></td>
+                                    <td><input type="number" step="0.01" class="form-control" name="duration" value="{{ row.duration }}"></td>
+                                    <td><input type="text" class="form-control" name="depends_on" value="{{ row.depends_on }}" placeholder="A, B"></td>
+                                    <td><input type="number" step="0.01" class="form-control" name="optimistic" value="{{ row.optimistic }}"></td>
+                                    <td><input type="number" step="0.01" class="form-control" name="most_likely" value="{{ row.most_likely }}"></td>
+                                    <td><input type="number" step="0.01" class="form-control" name="pessimistic" value="{{ row.pessimistic }}"></td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="d-flex justify-content-end pt-2">
+                        <button type="submit" class="btn btn-success px-4">Process Tasks</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.getElementById("add-row-btn").addEventListener("click", function () {
+        const tableBody = document.querySelector("#manual-task-table tbody");
+        const newRow = document.createElement("tr");
+        newRow.innerHTML = `
+            <td><input type="text" class="form-control" name="task"></td>
+            <td><input type="number" step="0.01" class="form-control" name="duration"></td>
+            <td><input type="text" class="form-control" name="depends_on" placeholder="A, B"></td>
+            <td><input type="number" step="0.01" class="form-control" name="optimistic"></td>
+            <td><input type="number" step="0.01" class="form-control" name="most_likely"></td>
+            <td><input type="number" step="0.01" class="form-control" name="pessimistic"></td>
+        `;
+        tableBody.appendChild(newRow);
+    });
+</script>
+{% endblock %}

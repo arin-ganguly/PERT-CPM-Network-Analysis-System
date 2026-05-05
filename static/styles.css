@@ -1,0 +1,143 @@
+body {
+    color: #0f172a;
+}
+
+.app-navbar {
+    background: linear-gradient(135deg, #0f4c81 0%, #14532d 100%);
+}
+
+.hero-panel {
+    background:
+        radial-gradient(circle at top right, rgba(59, 130, 246, 0.18), transparent 35%),
+        linear-gradient(135deg, #ffffff 0%, #ecfeff 100%);
+    border: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.glass-card {
+    background: rgba(255, 255, 255, 0.75);
+    border: 1px solid rgba(148, 163, 184, 0.25);
+    box-shadow: 0 16px 40px rgba(15, 23, 42, 0.08);
+}
+
+.summary-card {
+    background:
+        linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(239, 246, 255, 0.92));
+}
+
+.table > :not(caption) > * > * {
+    vertical-align: middle;
+}
+
+.chart-preview-button {
+    width: 100%;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    cursor: zoom-in;
+}
+
+.chart-preview-image {
+    width: 100%;
+    max-height: 420px;
+    object-fit: contain;
+    background: #ffffff;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.chart-preview-button:hover .chart-preview-image {
+    transform: scale(1.01);
+    box-shadow: 0 14px 30px rgba(15, 23, 42, 0.12);
+}
+
+.chart-modal-content {
+    background: #f8fafc;
+}
+
+.chart-modal-image {
+    width: 100%;
+    max-height: 78vh;
+    object-fit: contain;
+    background: #ffffff;
+}
+
+.section-kicker {
+    display: inline-block;
+    margin-bottom: 0.75rem;
+    color: #0f766e;
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.section-heading {
+    max-width: 760px;
+    margin-right: auto;
+    margin-left: auto;
+}
+
+.homepage-list {
+    padding-left: 1.1rem;
+}
+
+.homepage-list li + li {
+    margin-top: 0.6rem;
+}
+
+.feature-card,
+.image-frame,
+.cta-panel,
+.info-panel {
+    border: 1px solid rgba(148, 163, 184, 0.18);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.96));
+}
+
+.feature-card,
+.image-frame {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.feature-card:hover,
+.image-frame:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 18px 32px rgba(15, 23, 42, 0.1);
+}
+
+.step-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #0f4c81 0%, #0f766e 100%);
+    color: #ffffff;
+    font-weight: 700;
+    box-shadow: 0 10px 22px rgba(15, 76, 129, 0.22);
+}
+
+.homepage-image {
+    width: 100%;
+    max-height: 360px;
+    object-fit: contain;
+}
+
+.info-panel {
+    background:
+        radial-gradient(circle at top left, rgba(14, 165, 233, 0.1), transparent 28%),
+        linear-gradient(135deg, #ffffff 0%, #eff6ff 100%);
+}
+
+.cta-panel {
+    background:
+        radial-gradient(circle at top center, rgba(34, 197, 94, 0.12), transparent 30%),
+        linear-gradient(135deg, #ffffff 0%, #f0fdf4 100%);
+}
+
+@media (max-width: 991.98px) {
+    .hero-panel,
+    .info-panel,
+    .cta-panel {
+        padding: 2rem !important;
+    }
+}

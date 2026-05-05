@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+
+{% block title %}Results | PERT/CPM Scheduler{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+    <div>
+        <h1 class="h2 fw-bold mb-1">Schedule Results</h1>
+        <p class="text-secondary mb-0">Critical path tasks are highlighted in red.</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('main.upload') }}" class="btn btn-outline-secondary">New Analysis</a>
+        <a href="{{ url_for('main.download') }}" class="btn btn-primary">Download Excel</a>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm summary-card h-100">
+            <div class="card-body">
+                <p class="text-uppercase small text-secondary fw-semibold mb-2">Total Project Duration</p>
+                <h2 class="display-6 fw-bold mb-0">{{ result.project_duration }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-8">
+        <div class="card border-0 shadow-sm summary-card h-100">
+            <div class="card-body">
+                <p class="text-uppercase small text-secondary fw-semibold mb-2">Critical Path</p>
+                <h2 class="h4 fw-bold mb-0">
+                    {% if result.critical_path %}
+                        {{ result.critical_path | join(' -> ') }}
+                    {% else %}
+                        No critical path found
+                    {% endif %}
+                </h2>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body p-4">
+        <h2 class="h4 fw-bold mb-3">CPM Schedule Table</h2>
+        <div class="table-responsive">
+            <table class="table align-middle table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>Task</th>
+                        <th>Duration</th>
+                        <th>Depends_On</th>
+                        <th>ES</th>
+                        <th>EF</th>
+                        <th>LS</th>
+                        <th>LF</th>
+                        <th>Slack</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in result.schedule %}
+                    <tr class="{% if row.critical %}table-danger{% endif %}">
+                        <td class="fw-semibold">{{ row.task }}</td>
+                        <td>{{ row.duration }}</td>
+                        <td>{{ row.depends_on }}</td>
+                        <td>{{ row.es }}</td>
+                        <td>{{ row.ef }}</td>
+                        <td>{{ row.ls }}</td>
+                        <td>{{ row.lf }}</td>
+                        <td>
+                            {% if row.critical %}
+                            <span class="badge text-bg-danger">0 (Critical)</span>
+                            {% else %}
+                            <span class="badge text-bg-warning">{{ row.slack }}</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center mb-3 gap-2 flex-wrap">
+                    <h2 class="h4 fw-bold mb-0">Dependency Network</h2>
+                    <span class="text-secondary small">Click image to enlarge</span>
+                </div>
+                <button
+                    type="button"
+                    class="chart-preview-button"
+                    data-bs-toggle="modal"
+                    data-bs-target="#chartModal"
+                    data-chart-title="Dependency Network"
+                    data-chart-src="{{ url_for('main.output_file', filename=graph_filename) }}"
+                    data-chart-alt="Project dependency network"
+                >
+                    <img
+                        src="{{ url_for('main.output_file', filename=graph_filename) }}"
+                        alt="Project dependency network"
+                        class="img-fluid rounded border chart-preview-image"
+                    >
+                </button>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center mb-3 gap-2 flex-wrap">
+                    <h2 class="h4 fw-bold mb-0">Gantt Chart</h2>
+                    <span class="text-secondary small">Click image to enlarge</span>
+                </div>
+                <button
+                    type="button"
+                    class="chart-preview-button"
+                    data-bs-toggle="modal"
+                    data-bs-target="#chartModal"
+                    data-chart-title="Gantt Chart"
+                    data-chart-src="{{ url_for('main.output_file', filename=gantt_filename) }}"
+                    data-chart-alt="Project Gantt chart"
+                >
+                    <img
+                        src="{{ url_for('main.output_file', filename=gantt_filename) }}"
+                        alt="Project Gantt chart"
+                        class="img-fluid rounded border chart-preview-image"
+                    >
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="chartModal" tabindex="-1" aria-labelledby="chartModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content chart-modal-content">
+            <div class="modal-header border-0 pb-0">
+                <h2 class="modal-title h4 fw-bold" id="chartModalLabel">Chart Preview</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body pt-3">
+                <img id="chartModalImage" src="" alt="" class="img-fluid rounded border chart-modal-image">
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const chartModal = document.getElementById("chartModal");
+    const chartModalLabel = document.getElementById("chartModalLabel");
+    const chartModalImage = document.getElementById("chartModalImage");
+
+    chartModal.addEventListener("show.bs.modal", function (event) {
+        const triggerButton = event.relatedTarget;
+        chartModalLabel.textContent = triggerButton.getAttribute("data-chart-title");
+        chartModalImage.src = triggerButton.getAttribute("data-chart-src");
+        chartModalImage.alt = triggerButton.getAttribute("data-chart-alt");
+    });
+</script>
+{% endblock %}

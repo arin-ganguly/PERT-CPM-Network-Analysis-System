@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+
+{% block title %}Home | PERT/CPM Scheduler{% endblock %}
+
+{% block content %}
+<section class="hero-panel p-5 rounded-4 shadow-sm mb-5">
+    <div class="row align-items-center g-4">
+        <div class="col-lg-7">
+            <span class="badge rounded-pill text-bg-light text-primary mb-3">Flask + pandas + networkx + matplotlib</span>
+            <h1 class="display-5 fw-bold mb-3">Plan project schedules, visualize dependencies, and find the critical path.</h1>
+            <p class="lead text-secondary mb-4">
+                Upload an Excel sheet or enter tasks manually to calculate ES, EF, LS, LF, Slack,
+                total project duration, the critical path, a dependency network, and a Gantt chart.
+            </p>
+            {% if sample_error %}
+            <div class="alert alert-danger shadow-sm" role="alert">
+                {{ sample_error }}
+            </div>
+            {% endif %}
+            <div class="d-flex flex-wrap gap-3">
+                <form action="{{ url_for('main.sample_run') }}" method="post" class="d-inline">
+                    <button type="submit" class="btn btn-primary btn-lg px-4">Run Sample Test File</button>
+                </form>
+                <a href="{{ url_for('main.upload') }}" class="btn btn-outline-primary btn-lg px-4">Upload Excel or Manual Entry</a>
+            </div>
+        </div>
+        <div class="col-lg-5">
+            <div class="glass-card p-4 rounded-4 h-100">
+                <h2 class="h4 fw-bold mb-3">Supported Inputs</h2>
+                <ul class="mb-0 text-secondary homepage-list">
+                    <li>Excel `.xlsx` file with `Task`, `Duration`, `Depends_On`</li>
+                    <li>Optional PERT columns: `O`, `M`, `P`</li>
+                    <li>Manual entry with dependency and estimate fields</li>
+                    <li>Automatic validation for cycles and missing tasks</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="mb-5">
+    <div class="section-heading text-center mb-4">
+        <span class="section-kicker">Workflow</span>
+        <h2 class="display-6 fw-bold">How It Works</h2>
+        <p class="text-secondary mb-0">Move from raw task data to a fully analyzed project schedule in four clear steps.</p>
+    </div>
+    <div class="row g-4">
+        <div class="col-md-6 col-xl-3">
+            <div class="feature-card h-100 p-4 rounded-4 shadow-sm">
+                <div class="step-badge mb-3">1</div>
+                <h3 class="h5 fw-bold">Input Tasks</h3>
+                <p class="text-secondary mb-0">
+                    Add task names and durations using either Excel upload or manual form entry.
+                </p>
+            </div>
+        </div>
+        <div class="col-md-6 col-xl-3">
+            <div class="feature-card h-100 p-4 rounded-4 shadow-sm">
+                <div class="step-badge mb-3">2</div>
+                <h3 class="h5 fw-bold">Define Dependencies</h3>
+                <p class="text-secondary mb-0">
+                    Connect each task to its predecessors so the project network reflects real execution order.
+                </p>
+            </div>
+        </div>
+        <div class="col-md-6 col-xl-3">
+            <div class="feature-card h-100 p-4 rounded-4 shadow-sm">
+                <div class="step-badge mb-3">3</div>
+                <h3 class="h5 fw-bold">Compute Schedule</h3>
+                <p class="text-secondary mb-0">
+                    Calculate ES, EF, LS, and LF using forward and backward pass logic.
+                </p>
+            </div>
+        </div>
+        <div class="col-md-6 col-xl-3">
+            <div class="feature-card h-100 p-4 rounded-4 shadow-sm">
+                <div class="step-badge mb-3">4</div>
+                <h3 class="h5 fw-bold">Identify Critical Path</h3>
+                <p class="text-secondary mb-0">
+                    Highlight zero-slack tasks to reveal the activities that control project completion.
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="info-panel rounded-4 p-4 p-lg-5 mb-5 shadow-sm">
+    <div class="row align-items-center g-4">
+        <div class="col-lg-6">
+            <span class="section-kicker">Scheduling Models</span>
+            <h2 class="display-6 fw-bold mb-3">PERT vs CPM</h2>
+            <p class="text-secondary mb-3">
+                <strong>PERT</strong> is ideal when task durations are uncertain. It uses optimistic,
+                most likely, and pessimistic estimates to calculate expected time.
+            </p>
+            <p class="text-secondary mb-3">
+                <strong>CPM</strong> is used when activity durations are fixed and known. It focuses on
+                schedule timing, float, and project control.
+            </p>
+            <p class="text-secondary mb-0">
+                In both methods, the <strong>critical path</strong> is the sequence of tasks that directly
+                determines the total project duration.
+            </p>
+        </div>
+        <div class="col-lg-6">
+            <div class="image-frame p-3 rounded-4 bg-white shadow-sm">
+                <img
+                    src="{{ url_for('static', filename='images/pert.jpg') }}"
+                    alt="PERT concept diagram"
+                    class="img-fluid rounded-3 homepage-image"
+                >
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="mb-5">
+    <div class="row align-items-center g-4">
+        <div class="col-lg-6">
+            <div class="image-frame p-3 rounded-4 bg-white shadow-sm">
+                <img
+                    src="{{ url_for('static', filename='images/cpm.jpg') }}"
+                    alt="Critical path method visualization"
+                    class="img-fluid rounded-3 homepage-image"
+                >
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <span class="section-kicker">Critical Path</span>
+            <h2 class="display-6 fw-bold mb-3">Critical Path Visualization</h2>
+            <div class="feature-card p-4 rounded-4 shadow-sm">
+                <p class="text-secondary mb-3">
+                    The critical path is the <strong>longest path</strong> through the project network.
+                </p>
+                <p class="text-secondary mb-3">
+                    Tasks on this path have <strong>no delay allowance</strong>, so any slip directly impacts delivery.
+                </p>
+                <p class="text-secondary mb-0">
+                    This path ultimately <strong>determines the total project duration</strong> and helps teams focus on the work that matters most.
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="cta-panel text-center rounded-4 p-5 shadow-sm">
+    <span class="section-kicker">Ready To Start</span>
+    <h2 class="display-6 fw-bold mb-3">Run your first project schedule analysis</h2>
+    <p class="text-secondary mb-4">
+        Upload your task network, calculate the schedule, and visualize the critical path in one place.
+    </p>
+    <a href="{{ url_for('main.upload') }}" class="btn btn-success btn-lg px-5">Start Analysis</a>
+</section>
+{% endblock %}
