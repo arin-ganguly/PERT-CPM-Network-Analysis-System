@@ -1,6 +1,6 @@
 import logging
 import math
-from pathlib import Path
+from io import BytesIO
 from typing import Any, Dict, Iterable, List, Optional
 
 import pandas as pd
@@ -120,8 +120,8 @@ def read_tasks_from_excel(file_stream: Any) -> List[Dict[str, Any]]:
     return tasks
 
 
-def export_results_to_excel(results: Dict[str, Any], output_path: Path) -> None:
-    """Export computed schedule results to an Excel workbook."""
+def export_results_to_excel(results: Dict[str, Any]) -> BytesIO:
+    """Export computed schedule results to an in-memory Excel workbook."""
     schedule_rows = [
         {
             "Task": row["task"],
@@ -148,9 +148,12 @@ def export_results_to_excel(results: Dict[str, Any], output_path: Path) -> None:
     )
 
     try:
-        with pd.ExcelWriter(output_path) as writer:
+        output_buffer = BytesIO()
+        with pd.ExcelWriter(output_buffer) as writer:
             schedule_frame.to_excel(writer, sheet_name="Schedule", index=False)
             summary_frame.to_excel(writer, sheet_name="Summary", index=False)
+        output_buffer.seek(0)
+        return output_buffer
     except ImportError as exc:
         raise ExcelValidationError(
             "Excel export requires the 'openpyxl' package for .xlsx files."

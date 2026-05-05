@@ -1,4 +1,5 @@
-from pathlib import Path
+import math
+from io import BytesIO
 from typing import Any, Dict, List, Tuple
 
 import matplotlib
@@ -116,8 +117,9 @@ def _build_schedule_rows(
     return rows
 
 
-def draw_gantt_chart(schedule_rows: List[Dict[str, Any]], project_duration: float, output_path: Path) -> None:
-    """Generate a Gantt chart image for the project schedule."""
+def draw_gantt_chart(schedule_rows: List[Dict[str, Any]], project_duration: float) -> bytes:
+    """Generate a Gantt chart image for the project schedule in memory."""
+    _validate_gantt_inputs(schedule_rows, project_duration)
     figure_height = max(4, len(schedule_rows) * 0.65)
     fig, ax = plt.subplots(figsize=(14, figure_height))
 
@@ -157,6 +159,23 @@ def draw_gantt_chart(schedule_rows: List[Dict[str, Any]], project_duration: floa
     ax.grid(axis="x", linestyle="--", alpha=0.4)
 
     plt.tight_layout()
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    plt.savefig(output_path, dpi=200, bbox_inches="tight")
+    buffer = BytesIO()
+    plt.savefig(buffer, format="png", dpi=200, bbox_inches="tight")
     plt.close(fig)
+    buffer.seek(0)
+    return buffer.getvalue()
+
+
+def _validate_gantt_inputs(schedule_rows: List[Dict[str, Any]], project_duration: float) -> None:
+    """Validate schedule values before plotting to avoid NaN/Inf axis errors."""
+    if not isinstance(project_duration, (int, float)) or not math.isfinite(project_duration):
+        raise ValueError("Project duration is invalid for Gantt chart generation.")
+
+    for row in schedule_rows:
+        task_name = row.get("task", "Unknown Task")
+        for field_name in ("duration", "es", "ef", "ls", "lf", "slack"):
+            field_value = row.get(field_name)
+            if not isinstance(field_value, (int, float)) or not math.isfinite(field_value):
+                raise ValueError(
+                    f"Task '{task_name}' has invalid plotting value for {field_name}."
+                )

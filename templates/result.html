@@ -10,7 +10,7 @@
     </div>
     <div class="d-flex gap-2">
         <a href="{{ url_for('main.upload') }}" class="btn btn-outline-secondary">New Analysis</a>
-        <a href="{{ url_for('main.download') }}" class="btn btn-primary">Download Excel</a>
+        <a href="{{ url_for('main.download_excel', analysis_id=analysis_id) }}" class="btn btn-primary">Download Excel</a>
     </div>
 </div>
 
@@ -95,15 +95,20 @@
                     data-bs-toggle="modal"
                     data-bs-target="#chartModal"
                     data-chart-title="Dependency Network"
-                    data-chart-src="{{ url_for('main.output_file', filename=graph_filename) }}"
+                    data-chart-src="data:image/png;base64,{{ graph_data }}"
                     data-chart-alt="Project dependency network"
                 >
                     <img
-                        src="{{ url_for('main.output_file', filename=graph_filename) }}"
+                        src="data:image/png;base64,{{ graph_data }}"
                         alt="Project dependency network"
                         class="img-fluid rounded border chart-preview-image"
                     >
                 </button>
+                <div class="pt-3">
+                    <a href="{{ url_for('main.download_graph', analysis_id=analysis_id, chart_kind='network') }}" class="btn btn-sm btn-outline-secondary">
+                        Download Network PNG
+                    </a>
+                </div>
             </div>
         </div>
     </div>
@@ -120,15 +125,20 @@
                     data-bs-toggle="modal"
                     data-bs-target="#chartModal"
                     data-chart-title="Gantt Chart"
-                    data-chart-src="{{ url_for('main.output_file', filename=gantt_filename) }}"
+                    data-chart-src="data:image/png;base64,{{ gantt_data }}"
                     data-chart-alt="Project Gantt chart"
                 >
                     <img
-                        src="{{ url_for('main.output_file', filename=gantt_filename) }}"
+                        src="data:image/png;base64,{{ gantt_data }}"
                         alt="Project Gantt chart"
                         class="img-fluid rounded border chart-preview-image"
                     >
                 </button>
+                <div class="pt-3">
+                    <a href="{{ url_for('main.download_graph', analysis_id=analysis_id, chart_kind='gantt') }}" class="btn btn-sm btn-outline-secondary">
+                        Download Gantt PNG
+                    </a>
+                </div>
             </div>
         </div>
     </div>

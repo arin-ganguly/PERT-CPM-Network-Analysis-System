@@ -1,14 +1,15 @@
-from datetime import datetime
+import base64
+from io import BytesIO
 from pathlib import Path
 from typing import Any, Dict, List
+from uuid import uuid4
 
 from flask import (
     Blueprint,
     current_app,
     render_template,
     request,
-    send_from_directory,
-    session,
+    send_file,
 )
 
 from core.cpm import calculate_cpm, draw_gantt_chart
@@ -22,6 +23,7 @@ from utils.excel_handler import (
 
 
 main_bp = Blueprint("main", __name__)
+ANALYSIS_CACHE: Dict[str, Dict[str, Any]] = {}
 
 
 @main_bp.route("/")
@@ -72,28 +74,59 @@ def process() -> Any:
         )
 
 
-@main_bp.route("/download")
-def download() -> Any:
-    """Download the latest generated Excel output."""
-    filename = session.get("download_file")
-    if not filename:
-        return render_template(
-            "upload.html",
-            error="No processed result is available for download yet.",
-            manual_rows=_blank_manual_rows(),
-        ), 404
+@main_bp.route("/download/excel/<analysis_id>")
+def download_excel(analysis_id: str) -> Any:
+    """Download the in-memory Excel result for an analysis."""
+    analysis = ANALYSIS_CACHE.get(analysis_id)
+    if analysis is None:
+        return (
+            render_template(
+                "upload.html",
+                error="The requested analysis is no longer available. Please run it again.",
+                manual_rows=_blank_manual_rows(),
+            ),
+            404,
+        )
 
-    return send_from_directory(
-        current_app.config["OUTPUT_DIR"],
-        filename,
+    return send_file(
+        BytesIO(analysis["excel_bytes"]),
         as_attachment=True,
+        download_name="schedule_results.xlsx",
+        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     )
 
 
-@main_bp.route("/outputs/<path:filename>")
-def output_file(filename: str) -> Any:
-    """Serve generated output images from the outputs directory."""
-    return send_from_directory(current_app.config["OUTPUT_DIR"], filename)
+@main_bp.route("/download/graph/<analysis_id>/<chart_kind>")
+def download_graph(analysis_id: str, chart_kind: str) -> Any:
+    """Download an in-memory PNG graph for an analysis."""
+    analysis = ANALYSIS_CACHE.get(analysis_id)
+    if analysis is None:
+        return (
+            render_template(
+                "upload.html",
+                error="The requested analysis is no longer available. Please run it again.",
+                manual_rows=_blank_manual_rows(),
+            ),
+            404,
+        )
+
+    if chart_kind not in {"network", "gantt"}:
+        return (
+            render_template(
+                "upload.html",
+                error="The requested chart type is invalid.",
+                manual_rows=_blank_manual_rows(),
+            ),
+            400,
+        )
+
+    graph_bytes = analysis[f"{chart_kind}_bytes"]
+    return send_file(
+        BytesIO(graph_bytes),
+        as_attachment=True,
+        download_name=f"{chart_kind}_chart.png",
+        mimetype="image/png",
+    )
 
 
 def _render_analysis_results(raw_tasks: List[Dict[str, Any]]) -> str:
@@ -101,30 +134,34 @@ def _render_analysis_results(raw_tasks: List[Dict[str, Any]]) -> str:
     prepared_tasks = apply_pert_estimates(raw_tasks)
     results = calculate_cpm(prepared_tasks)
 
-    output_dir = Path(current_app.config["OUTPUT_DIR"])
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
-    graph_filename = f"network_{timestamp}.png"
-    gantt_filename = f"gantt_{timestamp}.png"
-    excel_filename = f"schedule_{timestamp}.xlsx"
-
-    draw_network_graph(
+    network_bytes = draw_network_graph(
         results["task_map"],
         results["schedule_map"],
         results["topological_order"],
         results["critical_edges"],
-        output_dir / graph_filename,
     )
-    draw_gantt_chart(results["schedule"], results["project_duration"], output_dir / gantt_filename)
-    export_results_to_excel(results, output_dir / excel_filename)
+    gantt_bytes = draw_gantt_chart(results["schedule"], results["project_duration"])
+    excel_buffer = export_results_to_excel(results)
+    analysis_id = uuid4().hex
 
-    session["download_file"] = excel_filename
+    ANALYSIS_CACHE[analysis_id] = {
+        "excel_bytes": excel_buffer.getvalue(),
+        "network_bytes": network_bytes,
+        "gantt_bytes": gantt_bytes,
+    }
 
     return render_template(
         "result.html",
         result=results,
-        graph_filename=graph_filename,
-        gantt_filename=gantt_filename,
+        analysis_id=analysis_id,
+        graph_data=_to_base64_image(network_bytes),
+        gantt_data=_to_base64_image(gantt_bytes),
     )
+
+
+def _to_base64_image(image_bytes: bytes) -> str:
+    """Convert PNG bytes into a base64 string for inline HTML rendering."""
+    return base64.b64encode(image_bytes).decode("utf-8")
 
 
 def _read_excel_submission() -> List[Dict[str, Any]]:

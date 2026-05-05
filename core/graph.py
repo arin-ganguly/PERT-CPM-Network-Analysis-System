@@ -1,5 +1,5 @@
 import math
-from pathlib import Path
+from io import BytesIO
 from typing import Any, Dict, Iterable, List, Tuple
 
 import matplotlib
@@ -160,9 +160,8 @@ def draw_network_graph(
     schedule_map: Dict[str, Dict[str, Any]],
     topological_order: List[str],
     critical_edges: List[Tuple[str, str]],
-    output_path: Path,
-) -> None:
-    """Draw the dependency network and highlight the critical path."""
+) -> bytes:
+    """Draw the dependency network and return a PNG image in memory."""
     graph = build_networkx_graph(task_map)
 
     levels: Dict[str, int] = {}
@@ -179,6 +178,7 @@ def draw_network_graph(
         for task_name, metrics in schedule_map.items()
         if abs(metrics["slack"]) < 1e-9
     }
+    _validate_schedule_map_for_plotting(schedule_map)
 
     labels = {
         task_name: (
@@ -224,6 +224,19 @@ def draw_network_graph(
     plt.title("Project Dependency Network", fontsize=16, fontweight="bold")
     plt.axis("off")
     plt.tight_layout()
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    plt.savefig(output_path, dpi=200, bbox_inches="tight")
+    buffer = BytesIO()
+    plt.savefig(buffer, format="png", dpi=200, bbox_inches="tight")
     plt.close()
+    buffer.seek(0)
+    return buffer.getvalue()
+
+
+def _validate_schedule_map_for_plotting(schedule_map: Dict[str, Dict[str, Any]]) -> None:
+    """Validate schedule values before plotting to avoid NaN/Inf rendering failures."""
+    for task_name, metrics in schedule_map.items():
+        for field_name in ("es", "ef", "ls", "lf", "slack"):
+            field_value = metrics.get(field_name)
+            if not isinstance(field_value, (int, float)) or not math.isfinite(field_value):
+                raise GraphValidationError(
+                    f"Task '{task_name}' has invalid plotting value for {field_name}."
+                )
